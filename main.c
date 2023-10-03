@@ -4,52 +4,10 @@
 
 #include "operations.h"
 #include "stack.h"
+#include "variables.h"
+#include "utils.h"
 
-#define MAX_NAME_LEN 10
-#define OPERATORS_COUNT 8
 #define MAX_EXP_LEN 1000
-
-struct Functions {
-  char name[MAX_NAME_LEN];
-  int no_of_operands;
-  int name_len;
-  void* operation;
-};
-
-struct Functions operators[] = {
-  {"exp", 2, 3, exp_},
-  {"sin", 1, 3, sin_},
-  {"pow", 2, 3, pow_},
-  {"-", 2, 1, sub},
-  {"+", 2, 1, add},
-  {"/", 2, 1, div_},
-  {"*", 2, 1, mul},
-  {"%", 2, 1, mod}
-};
-
-int is_digit(char c) {
-  return (c >= 48 && c <= 57);
-}
-
-int isoperator(char c) {
-  return (c == '-' || c == '+' || c == '*' || c == '/' || c == '%' || c == '^');
-}
-
-struct Functions* is_operator(char* str) {
-  int i;
-
-  for(i = 0; i < OPERATORS_COUNT; ++i) {
-    if(strncmp(str, operators[i].name, operators[i].name_len) == 0) {
-      return &(operators[i]);
-    }
-  }
-
-  return NULL;
-}
-
-int is_char(char c) {
-  return (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
-}
 
 double eval(double operands[], struct Functions* operator);
 
@@ -140,7 +98,8 @@ int main(int argc, char** argv) {
   char buffer[MAX_EXP_LEN];
   memset(buffer, 0, MAX_EXP_LEN);
 
-  int c = 0, i = 0;
+  int c = 0, i = 0, is_variable_set = 0, equal_sign_index = 0;
+  char variable_name = '_';
 
   do {
     fprintf(stdout, ">>> ");
@@ -150,15 +109,37 @@ int main(int argc, char** argv) {
 	break;
       }
       else {
+	if(is_char(c) && is_variable_set == 0) {
+	  is_variable_set = 1;
+	  variable_name = c;
+	}
+	else if(c == '=' && is_variable_set) {
+	  equal_sign_index = i+1;
+	}
 	buffer[i++] = c;
       }
     }
+
+    char variable_char = -1;
+
     if(strncmp(buffer, "quit", 4) == 0) {
       is_running = 0;
     }
+    else if((variable_char = is_variable(buffer)) != -1) {
+      double var_value = get_variable_value(variable_char);
+      fprintf(stdout, "%0.2f\n", var_value);
+      equal_sign_index = 0;
+      memset(buffer, 0, MAX_EXP_LEN);
+      is_variable_set = 0;
+    }
     else {
-      double result = parse_input(buffer);
+      double result = parse_input(buffer+equal_sign_index);
+      if(is_variable_set) {
+	is_variable_set = 0;
+	set_var_value(variable_name, result);
+      }
       fprintf(stdout, "%0.2f\n", result);
+      memset(buffer, 0, MAX_EXP_LEN);
     }
   }
   while(is_running);
