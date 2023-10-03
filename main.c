@@ -9,6 +9,8 @@
 
 #define MAX_EXP_LEN 1000
 
+double last_printed_value = 0;
+
 double eval(double operands[], struct Functions* operator);
 
 int getname(char name[], int start, char out[]) {
@@ -125,12 +127,16 @@ int main(int argc, char** argv) {
     if(strncmp(buffer, "quit", 4) == 0) {
       is_running = 0;
     }
+    else if(strncmp(buffer, "_", 1) == 0) {
+      fprintf(stdout, "%0.2f\n", last_printed_value);
+    }
     else if((variable_char = is_variable(buffer)) != -1) {
       double var_value = get_variable_value(variable_char);
       fprintf(stdout, "%0.2f\n", var_value);
       equal_sign_index = 0;
       memset(buffer, 0, MAX_EXP_LEN);
       is_variable_set = 0;
+      last_printed_value = var_value;
     }
     else {
       double result = parse_input(buffer+equal_sign_index);
@@ -139,6 +145,7 @@ int main(int argc, char** argv) {
 	set_var_value(variable_name, result);
       }
       fprintf(stdout, "%0.2f\n", result);
+      last_printed_value = result;
       memset(buffer, 0, MAX_EXP_LEN);
     }
   }
